@@ -1,6 +1,6 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
-  "name": "relay",
+  "name": "lucass3na",
   "version": "0.1.0",
   "description": "Marketplace for the relay plugin — a self-hosted alternative to shunt.",
   "owner": {

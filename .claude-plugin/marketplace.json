@@ -1,0 +1,21 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "relay",
+  "version": "0.1.0",
+  "description": "Marketplace for the relay plugin — a self-hosted alternative to shunt.",
+  "owner": {
+    "name": "Lucas Sena"
+  },
+  "plugins": [
+    {
+      "name": "relay",
+      "description": "Relays I/O-heavy work to a cheap headless Claude model to save tokens. Hooks block large file reads and redirect to bulk-reader/code-writer scripts backed by `claude -p`.",
+      "version": "0.1.0",
+      "author": {
+        "name": "Lucas Sena"
+      },
+      "source": "./",
+      "category": "developer-tools"
+    }
+  ]
+}

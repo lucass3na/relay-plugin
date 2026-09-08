@@ -1,0 +1,22 @@
+{
+  "hook": "check-bash-read",
+  "cases": [
+    { "name": "cat small file allowed", "file_lines": 50, "command": "cat {file}", "expect": "allow" },
+    { "name": "cat large file blocked", "file_lines": 500, "command": "cat {file}", "expect": "block" },
+    { "name": "head large file blocked", "file_lines": 500, "command": "head {file}", "expect": "block" },
+    { "name": "tail large file blocked", "file_lines": 500, "command": "tail {file}", "expect": "block" },
+    { "name": "less large file blocked", "file_lines": 500, "command": "less {file}", "expect": "block" },
+    { "name": "more large file blocked", "file_lines": 500, "command": "more {file}", "expect": "block" },
+    { "name": "cat with flags large file blocked", "file_lines": 500, "command": "cat -n {file}", "expect": "block" },
+    { "name": "head with numeric flag large file blocked", "file_lines": 500, "command": "head -100 {file}", "expect": "block" },
+    { "name": "piped cat allowed (targeted read)", "file_lines": 500, "command": "cat {file} | grep foo", "expect": "allow" },
+    { "name": "redirected cat allowed (not reading into context)", "file_lines": 500, "command": "cat {file} > /tmp/out", "expect": "allow" },
+    { "name": "git status allowed", "file_lines": null, "command": "git status", "expect": "allow" },
+    { "name": "grep allowed", "file_lines": 500, "command": "grep foo {file}", "expect": "allow" },
+    { "name": "empty command allowed", "file_lines": null, "command": "", "expect": "allow" },
+    { "name": "cat nonexistent file allowed", "file_lines": null, "command": "cat /nonexistent/path", "expect": "allow" },
+    { "name": "cat quoted path large file blocked", "file_lines": 500, "command": "cat \"{file}\"", "expect": "block" },
+    { "name": "custom threshold via env", "file_lines": 40, "command": "cat {file}", "env": { "RELAY_MIN_LINES": "10" }, "expect": "block" },
+    { "name": "block reason mentions bulk-reader", "file_lines": 500, "command": "cat {file}", "expect": "block", "reason_contains": "bulk-reader" }
+  ]
+}

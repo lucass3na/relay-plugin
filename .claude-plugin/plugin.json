@@ -1,0 +1,16 @@
+{
+  "name": "relay",
+  "displayName": "Relay",
+  "version": "0.1.0",
+  "description": "Relays I/O-heavy work to a cheap headless Claude model to save tokens. Hooks block large file reads and redirect to bulk-reader/code-writer scripts backed by `claude -p`.",
+  "author": {
+    "name": "Lucas Sena"
+  },
+  "license": "Apache-2.0",
+  "keywords": [
+    "token-optimization",
+    "model-routing",
+    "delegation"
+  ],
+  "skills": "./skills/"
+}

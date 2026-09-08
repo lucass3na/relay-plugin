@@ -1,0 +1,22 @@
+{
+  "hook": "check-file-size",
+  "cases": [
+    { "name": "small file allowed", "file_lines": 50, "tool_input": {}, "expect": "allow" },
+    { "name": "large file blocked", "file_lines": 500, "tool_input": {}, "expect": "block" },
+    { "name": "exactly at threshold allowed", "file_lines": 350, "tool_input": {}, "expect": "allow" },
+    { "name": "one over threshold blocked", "file_lines": 351, "tool_input": {}, "expect": "block" },
+    { "name": "large file with offset allowed", "file_lines": 500, "tool_input": { "offset": 100 }, "expect": "allow" },
+    { "name": "large file with limit allowed", "file_lines": 500, "tool_input": { "limit": 50 }, "expect": "allow" },
+    { "name": "large file with offset and limit allowed", "file_lines": 500, "tool_input": { "offset": 10, "limit": 20 }, "expect": "allow" },
+    { "name": "nonexistent file allowed", "file_lines": null, "tool_input": {}, "expect": "allow" },
+    { "name": "empty file_path allowed", "file_lines": 500, "tool_input": { "file_path": "" }, "expect": "allow" },
+    { "name": "custom threshold via env allows under it", "file_lines": 100, "tool_input": {}, "env": { "RELAY_MIN_LINES": "50" }, "expect": "block" },
+    { "name": "custom threshold via env blocks over it", "file_lines": 40, "tool_input": {}, "env": { "RELAY_MIN_LINES": "50" }, "expect": "allow" },
+    { "name": "invalid env threshold falls back to default (small)", "file_lines": 100, "tool_input": {}, "env": { "RELAY_MIN_LINES": "notanumber" }, "expect": "allow" },
+    { "name": "invalid env threshold falls back to default (large)", "file_lines": 500, "tool_input": {}, "env": { "RELAY_MIN_LINES": "notanumber" }, "expect": "block" },
+    { "name": "zero offset counts as targeted read", "file_lines": 500, "tool_input": { "offset": 0 }, "expect": "allow" },
+    { "name": "one line file allowed", "file_lines": 1, "tool_input": {}, "expect": "allow" },
+    { "name": "very large file blocked", "file_lines": 10000, "tool_input": {}, "expect": "block" },
+    { "name": "block reason mentions bulk-reader", "file_lines": 500, "tool_input": {}, "expect": "block", "reason_contains": "bulk-reader" }
+  ]
+}

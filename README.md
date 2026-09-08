@@ -30,6 +30,41 @@ system prompt instead of Claude Code's own ~6.4k-token agent prompt.
 - Optional: `timeout` or `gtimeout` (Homebrew `coreutils`) so `RELAY_TIMEOUT_SECONDS`
   is actually enforced. Without either, calls run unbounded.
 
+## Installation
+
+```bash
+claude plugin marketplace add lucass3na/relay-plugin
+claude plugin install relay@lucass3na
+```
+
+The repo is private, so whoever runs this needs read access to
+`lucass3na/relay-plugin` first (add them as a collaborator on GitHub) — otherwise
+`marketplace add` fails to fetch it.
+
+Installing from a local checkout instead of GitHub works the same way, just point at
+the path:
+
+```bash
+claude plugin marketplace add /path/to/relay-plugin
+claude plugin install relay@lucass3na
+```
+
+Either way, start a new Claude Code session afterward — plugins load at startup, not
+mid-session. This works identically in the terminal CLI, the VS Code / JetBrains
+extensions, and the desktop app, since they all share the same `~/.claude` plugin
+config. One VS Code–specific gotcha: the delegation scripts shell out to the `claude`
+binary, and a GUI-launched extension process doesn't always inherit the same `PATH` as
+your terminal — if you hit `missing required command: claude` there, it's a `PATH`
+issue, not a broken install.
+
+To confirm it installed correctly:
+
+```bash
+claude plugin list
+```
+
+should show `relay@lucass3na` as `enabled`.
+
 ## Plugin structure
 
 ```

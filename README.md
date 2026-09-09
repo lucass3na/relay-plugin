@@ -37,9 +37,7 @@ claude plugin marketplace add lucass3na/relay-plugin
 claude plugin install relay@lucass3na
 ```
 
-The repo is private, so whoever runs this needs read access to
-`lucass3na/relay-plugin` first (add them as a collaborator on GitHub) — otherwise
-`marketplace add` fails to fetch it.
+The repo is public, so anyone can run this without needing access granted first.
 
 Installing from a local checkout instead of GitHub works the same way, just point at
 the path:

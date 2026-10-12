@@ -45,6 +45,8 @@ run_read_hook_case() {
     bash -c "echo '$input' | '$PLUGIN_ROOT/hooks/check-file-size'")
 
   decision=$(echo "$result" | jq -r '.decision // empty')
+  # No output means the hook has no objection, so the tool call proceeds
+  [ -z "$result" ] && decision="allow"
   reason=$(echo "$result" | jq -r '.reason // empty')
 
   [ "$decision" = "$expect" ] || ok=0
@@ -83,6 +85,8 @@ run_bash_hook_case() {
     bash -c "echo '$input' | '$PLUGIN_ROOT/hooks/check-bash-read'")
 
   decision=$(echo "$result" | jq -r '.decision // empty')
+  # No output means the hook has no objection, so the tool call proceeds
+  [ -z "$result" ] && decision="allow"
   reason=$(echo "$result" | jq -r '.reason // empty')
 
   [ "$decision" = "$expect" ] || ok=0

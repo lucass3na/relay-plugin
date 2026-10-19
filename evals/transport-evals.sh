@@ -16,7 +16,7 @@ cat > "$STUBDIR/claude" <<'STUB'
 cat > /dev/null  # consume stdin
 case "${CLAUDE_STUB_MODE:-success}" in
   success)
-    echo '{"is_error": false, "result": "STUBBED_ANSWER", "total_cost_usd": 0.0012, "modelUsage": {"claude-haiku-4-5-20251001": {}}}'
+    echo '{"is_error": false, "result": "STUBBED_ANSWER", "total_cost_usd": 0.0012, "modelUsage": {"claude-haiku-5-5": {}}}'
     ;;
   is_error)
     echo '{"is_error": true, "result": "the mode blew up"}'

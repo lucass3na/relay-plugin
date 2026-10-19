@@ -21,7 +21,7 @@ if [ -z "${RELAY_MAX_INPUT_CHARS:-}" ]; then
   RELAY_MAX_INPUT_CHARS=600000
 fi
 RELAY_TIMEOUT_SECONDS="${RELAY_TIMEOUT_SECONDS:-180}"
-RELAY_MODEL="${RELAY_MODEL:-claude-haiku-4-5-20251001}"
+RELAY_MODEL="${RELAY_MODEL:-haiku}"
 RELAY_EFFORT="${RELAY_EFFORT:-low}"
 
 # mktemp with cleanup on script exit. Usage: relay_tmpfile <varname>

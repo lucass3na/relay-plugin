@@ -160,7 +160,7 @@ All settings are environment variables — add them to the `env` block in
 | Variable | Default | Purpose |
 |----------|---------|---------|
 | `RELAY_MIN_LINES` | `350` | Line count above which the Read/Bash hooks block and redirect |
-| `RELAY_MODEL` | `claude-haiku-4-5-20251001` | Model passed to `claude -p` for delegated calls |
+| `RELAY_MODEL` | `haiku` | Model alias passed to `claude -p`; resolves to the latest Haiku model |
 | `RELAY_EFFORT` | `low` | `--effort` passed to `claude -p` (low/medium/high/xhigh/max) |
 | `RELAY_TIMEOUT_SECONDS` | `180` | Timeout for one delegated call, enforced via `timeout`/`gtimeout` if present |
 | `RELAY_MAX_INPUT_CHARS` | `600000` | Soft sanity ceiling on corpus size before invoking |

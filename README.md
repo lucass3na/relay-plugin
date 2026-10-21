@@ -72,8 +72,10 @@ relay/
 │   └── plugin.json         # Plugin manifest (name, description, version)
 ├── hooks/
 │   ├── hooks.json          # Hook registration (PreToolUse matchers)
+│   ├── lib/
+│   │   └── hook.sh         # Shared threshold, line count, block output
 │   ├── check-file-size     # Blocks Read on files > 350 lines
-│   └── check-bash-read     # Blocks cat/head/tail on large files
+│   └── check-bash-read     # Blocks cat/head/tail/sed on large files
 ├── scripts/
 │   ├── lib/
 │   │   └── delegate.sh     # Shared claude -p plumbing
@@ -85,9 +87,9 @@ relay/
 │   └── code-writer/
 │       └── SKILL.md        # When/how to call code-write
 └── evals/
-    ├── run.sh                # Runs hook + transport evals (40 tests)
-    ├── hook-evals.json       # Read hook test cases (17)
-    ├── bash-hook-evals.json  # Bash hook test cases (17)
+    ├── run.sh                # Runs hook + transport evals (52 tests)
+    ├── hook-evals.json       # Read hook test cases (24)
+    ├── bash-hook-evals.json  # Bash hook test cases (22)
     ├── transport-evals.sh    # scripts/lib/delegate.sh against a stubbed claude (6)
     └── fixtures/             # Test fixture files
 ```
@@ -139,14 +141,20 @@ never enters Claude's own context.
 
 Fires on every `Read` tool call. Blocks full-file reads on files exceeding `MIN_LINES`
 (default: 350, configurable via `RELAY_MIN_LINES`). Allows through:
-- Targeted reads (offset or limit set)
+- Targeted reads with a `limit`, as long as the lines read from that file this session
+  stay within `MIN_LINES` — so Claude can't page through a large file in chunks
+  instead of delegating. A read with only `offset` counts as a full read.
 - Files under the threshold
+- Binary files — images, PDFs (Read renders them; bulk-reader only handles text)
 - Nonexistent files (let Read handle the error)
+
+The per-session tally lives in `$TMPDIR/relay-reads/<session_id>` (override with
+`RELAY_STATE_DIR`).
 
 ### check-bash-read (Bash hook)
 
-Fires on every `Bash` tool call. Catches `cat`, `head`, `tail`, `less`, `more` on large
-files. Allows through:
+Fires on every `Bash` tool call. Catches `cat`, `head`, `tail`, `less`, `more` and
+`sed` (except `sed -i`/`--in-place`) on large files. Allows through:
 - Piped commands (`cat file | grep`) — targeted reads
 - Redirections (`cat file > out`) — not reading into context
 - Commands with flags that indicate targeted reads
@@ -159,7 +167,8 @@ All settings are environment variables — add them to the `env` block in
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `RELAY_MIN_LINES` | `350` | Line count above which the Read/Bash hooks block and redirect |
+| `RELAY_MIN_LINES` | `350` | Line count above which the Read/Bash hooks block and redirect; also the per-session budget for targeted reads of one large file |
+| `RELAY_STATE_DIR` | `$TMPDIR/relay-reads` | Where the Read hook keeps its per-session tally of targeted reads |
 | `RELAY_MODEL` | `haiku` | Model alias passed to `claude -p`; resolves to the latest Haiku model |
 | `RELAY_EFFORT` | `low` | `--effort` passed to `claude -p` (low/medium/high/xhigh/max) |
 | `RELAY_TIMEOUT_SECONDS` | `180` | Timeout for one delegated call, enforced via `timeout`/`gtimeout` if present |
@@ -183,6 +192,12 @@ bash evals/run.sh --transport  # transport plumbing only
 
 ## Known limitations
 
+- **The targeted-read budget counts re-reads** — reading the same 50 lines of a large
+  file twice counts as 100. A long editing session on one big file can exhaust the
+  budget; raise `RELAY_MIN_LINES` if that gets in the way.
+- **The Bash hook is best-effort** — it only recognizes a command that starts with
+  `cat`/`head`/`tail`/`less`/`more`/`sed`. `nl file`, `awk 1 file` or
+  `cd dir && cat file` get through. The Read hook is the real gate.
 - **No enforcement for code-writer** — only bulk-reader has hook enforcement.
   code-writer relies on Claude recognizing when to use it via the skill description.
 - **Timeout enforcement is best-effort** — `RELAY_TIMEOUT_SECONDS` only applies when

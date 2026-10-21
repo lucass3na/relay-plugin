@@ -1,9 +1,8 @@
 #!/bin/bash
 # Block Bash commands that read large files, redirect to the bulk-reader skill
-# Catches cat/head/tail/less/more that bypass the Read hook
+# Catches cat/head/tail/less/more/sed that bypass the Read hook
 
-MIN_LINES="${RELAY_MIN_LINES:-350}"
-case "$MIN_LINES" in ''|*[!0-9]*) MIN_LINES=350 ;; esac
+. "$(cd "$(dirname "$0")" && pwd)/lib/hook.sh"
 
 input=$(cat)
 
@@ -18,7 +17,10 @@ echo "$command" | grep -qE '>' && exit 0
 
 # Extract file path from read commands, stripping flags (e.g. cat -n, head -100)
 file_path=""
-if echo "$command" | grep -qE '^(cat|head|tail|less|more) '; then
+if echo "$command" | grep -qE '^sed ' && ! echo "$command" | grep -qE ' (-i|--in-place)'; then
+  # sed prints its input (sed -n '1,350p' file), the file is the last argument
+  file_path=$(echo "$command" | awk '{ print $NF }' | tr -d '"'"'")
+elif echo "$command" | grep -qE '^(cat|head|tail|less|more) '; then
   # Remove the command name, then strip any flags (-n, -100, --number, etc.)
   args=$(echo "$command" | sed -E 's/^(cat|head|tail|less|more) +//')
   for arg in $args; do
@@ -32,7 +34,7 @@ fi
 [ -z "$file_path" ] && exit 0
 [ ! -f "$file_path" ] && exit 0
 
-lines=$(wc -l < "$file_path" 2>/dev/null | tr -d ' ' || echo "0")
+lines=$(relay_line_count "$file_path")
 if [ "$lines" -gt "$MIN_LINES" ]; then
-  echo "{\"decision\": \"block\", \"reason\": \"File is ${lines} lines (threshold: ${MIN_LINES}). Use the /bulk-reader skill to delegate this read instead of cat/head/tail.\"}"
+  relay_block "File is ${lines} lines (threshold: ${MIN_LINES}). Delegate this read with the relay:bulk-reader skill instead of cat/head/tail/sed. For a specific section you need to edit, use Read with offset/limit."
 fi

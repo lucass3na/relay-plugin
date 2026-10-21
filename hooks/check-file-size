@@ -1,20 +1,16 @@
 #!/bin/bash
 # Block full-file reads on large files, redirect to the bulk-reader skill
-# Self-contained: all routing logic lives here, no CLAUDE.md needed
+# Self-contained routing: no CLAUDE.md needed
 
-MIN_LINES="${RELAY_MIN_LINES:-350}"
-case "$MIN_LINES" in ''|*[!0-9]*) MIN_LINES=350 ;; esac
+. "$(cd "$(dirname "$0")" && pwd)/lib/hook.sh"
+
+STATE_DIR="${RELAY_STATE_DIR:-${TMPDIR:-/tmp}/relay-reads}"
 
 input=$(cat)
 
 file_path=$(echo "$input" | jq -r '.tool_input.file_path // empty')
-offset=$(echo "$input" | jq -r '.tool_input.offset // empty')
 limit=$(echo "$input" | jq -r '.tool_input.limit // empty')
-
-# Allow targeted reads (offset or limit set) — Claude already knows what it needs
-if [ -n "$offset" ] || [ -n "$limit" ]; then
-  exit 0
-fi
+session_id=$(echo "$input" | jq -r '.session_id // "default"')
 
 # Allow if file doesn't exist or path is empty
 if [ -z "$file_path" ] || [ ! -f "$file_path" ]; then
@@ -22,9 +18,25 @@ if [ -z "$file_path" ] || [ ! -f "$file_path" ]; then
 fi
 
 # Allow small files — delegation overhead isn't worth it
-lines=$(wc -l < "$file_path" 2>/dev/null | tr -d ' ' || echo "0")
+lines=$(relay_line_count "$file_path")
 if [ "$lines" -le "$MIN_LINES" ]; then
   exit 0
 fi
 
-echo "{\"decision\": \"block\", \"reason\": \"File is ${lines} lines (threshold: ${MIN_LINES}). Use the /bulk-reader skill to delegate this read instead of reading it directly. If you need exact content for editing, re-read with an offset/limit for just the section you need.\"}"
+# Allow images, PDFs and other binaries — Read renders them, bulk-reader can't
+relay_is_binary "$file_path" && exit 0
+
+ADVICE="This is not a line limit to page around: delegate with the relay:bulk-reader skill. Use offset/limit only for a specific section you already located (e.g. with grep) and need to edit."
+
+# Without a limit, Read returns everything from offset on — treat it as a full read
+[ -z "$limit" ] && relay_block "File is ${lines} lines (threshold: ${MIN_LINES}). $ADVICE"
+
+# Lines of this file already read this session, so chunked reads can't add up to the whole file
+state_file="$STATE_DIR/$session_id"
+total=$(( $(awk -F'\t' -v p="$file_path" '$2 == p { s += $1 } END { print s + 0 }' "$state_file" 2>/dev/null || echo 0) + limit ))
+if [ "$total" -gt "$MIN_LINES" ]; then
+  relay_block "Reading ${limit} more lines would bring this session's reads of this ${lines}-line file to ${total} (threshold: ${MIN_LINES}). $ADVICE"
+fi
+
+mkdir -p "$STATE_DIR"
+printf '%s\t%s\n' "$limit" "$file_path" >> "$state_file"
